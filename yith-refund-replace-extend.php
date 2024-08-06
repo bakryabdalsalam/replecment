@@ -17,8 +17,9 @@ class YITH_Refund_Custom {
         add_action('wp_ajax_nopriv_yith_custom_refund_replace', array($this, 'handle_form_submission'));
         add_filter('manage_edit-shop_order_columns', array($this, 'add_custom_order_column'));
         add_action('manage_shop_order_posts_custom_column', array($this, 'custom_orders_column_content'));
-        add_filter('manage_yith_refund_request_posts_columns', array($this, 'add_custom_refund_request_column'));
+        add_filter('manage_edit-yith_refund_request_columns', array($this, 'add_custom_refund_request_column'));
         add_action('manage_yith_refund_request_posts_custom_column', array($this, 'custom_refund_request_column_content'), 10, 2);
+        add_action('save_post_yith_refund_request', array($this, 'save_refund_request_meta'), 10, 3);
     }
 
     public function enqueue_scripts() {
@@ -36,15 +37,15 @@ class YITH_Refund_Custom {
             $(document.body).on('ywcars_request_window_created', function() {
                 if ($('#ywcars_refund_type').length === 0) {
                     var refundTypeHtml = '<div class="ywcars_block" id="ywcars_refund_type">' +
-                                         '<label for="ywcars_refund_type">Choose Request Type:</label><br>' +
-                                         '<label><input type="radio" name="ywcars_refund_type_choice" value="refund" checked> Refund</label><br>' +
-                                         '<label><input type="radio" name="ywcars_refund_type_choice" value="replacement"> Replacement</label>' +
+                                         '<label for="ywcars_refund_type">من فضلك أختر نوع الطلب:</label><br>' +
+                                         '<label><input type="radio" name="ywcars_refund_type_choice" value="أسترجاع" checked> أسترجاع</label><br>' +
+                                         '<label><input type="radio" name="ywcars_refund_type_choice" value="أستبدال" > أستبدال</label>' +
                                          '</div>';
                     $('#ywcars_form').prepend(refundTypeHtml);
                 }
 
                 if ($('#ywcars_hidden_refund_type').length === 0) {
-                    $('#ywcars_form').append('<input type="hidden" id="ywcars_hidden_refund_type" name="ywcars_hidden_refund_type" value="refund">');
+                    $('#ywcars_form').append('<input type="hidden" id="ywcars_hidden_refund_type" name="ywcars_hidden_refund_type" value="أسترجاع">');
                 }
 
                 $('input[name="ywcars_refund_type_choice"]').on('change', function() {
@@ -97,9 +98,8 @@ class YITH_Refund_Custom {
             wp_send_json_error(array('message' => __('Missing required fields', 'yith-ars')));
         }
 
-        error_log("Order ID: $order_id, Choice: $refund_replace_choice");
-
         update_post_meta($order_id, '_yith_ars_request_type', $refund_replace_choice);
+        error_log("Order ID: $order_id, Choice: $refund_replace_choice"); // Debugging line
 
         wp_send_json_success(array('message' => __('Form submitted successfully', 'yith-ars')));
     }
@@ -110,7 +110,7 @@ class YITH_Refund_Custom {
         foreach ($columns as $key => $column) {
             $new_columns[$key] = $column;
             if ('order_total' === $key) {
-                $new_columns['refund_replace_choice'] = 'Refund/Replace';
+                $new_columns['refund_replace_choice'] = 'أسنرجاع/أستبدال';
             }
         }
 
@@ -131,18 +131,29 @@ class YITH_Refund_Custom {
     }
 
     public function add_custom_refund_request_column($columns) {
-        $columns['refund_replace_choice'] = 'Refund/Replace';
+        $columns['refund_replace_choice'] = 'أسنرجاع/أستبدال';
         return $columns;
     }
 
     public function custom_refund_request_column_content($column, $post_id) {
         if ('refund_replace_choice' === $column) {
-            $refund_replace_choice = get_post_meta($post_id, '_yith_ars_request_type', true);
-            if ($refund_replace_choice) {
-                echo esc_html($refund_replace_choice);
-            } else {
-                echo 'N/A';
-            }
+            // Fetch the order ID stored in the refund request's meta
+            $order_id = get_post_meta($post_id, '_ywcars_order_id', true);
+
+            // Now retrieve the refund or replacement choice using the order ID
+            $refund_replace_choice = get_post_meta($order_id, '_yith_ars_request_type', true);
+            echo $refund_replace_choice ? esc_html($refund_replace_choice) : 'N/A';
+        }
+    }
+
+    public function save_refund_request_meta($post_id, $post, $update) {
+        if ($post->post_type != 'yith_refund_request') {
+            return;
+        }
+
+        $order_id = isset($_POST['ywcars_form_order_id']) ? absint($_POST['ywcars_form_order_id']) : 0;
+        if ($order_id) {
+            update_post_meta($post_id, '_ywcars_order_id', $order_id);
         }
     }
 }

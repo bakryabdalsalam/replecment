@@ -2,15 +2,15 @@ jQuery(document).ready(function($) {
     $(document.body).on('ywcars_request_window_created', function() {
         if ($('#ywcars_refund_type').length === 0) {
             var refundTypeHtml = '<div class="ywcars_block" id="ywcars_refund_type">' +
-                                 '<label for="ywcars_refund_type">Choose Request Type:</label><br>' +
-                                 '<label><input type="radio" name="ywcars_refund_type_choice" value="refund" checked> Refund</label><br>' +
-                                 '<label><input type="radio" name="ywcars_refund_type_choice" value="replacement"> Replacement</label>' +
+                                 '<label for="ywcars_refund_type">من فضلك أختر نوع الطلب:</label><br>' +
+                                 '<label><input type="radio" name="ywcars_refund_type_choice" value="أسترجاع" checked> أسترجاع</label><br>' +
+                                 '<label><input type="radio" name="ywcars_refund_type_choice" value="أستبدال"> أستبدال</label>' +
                                  '</div>';
             $('#ywcars_form').prepend(refundTypeHtml);
         }
 
         if ($('#ywcars_hidden_refund_type').length === 0) {
-            $('#ywcars_form').append('<input type="hidden" id="ywcars_hidden_refund_type" name="ywcars_hidden_refund_type" value="refund">');
+            $('#ywcars_form').append('<input type="hidden" id="ywcars_hidden_refund_type" name="ywcars_hidden_refund_type" value="أسترجاع">');
         }
 
         $('input[name="ywcars_refund_type_choice"]').on('change', function() {
